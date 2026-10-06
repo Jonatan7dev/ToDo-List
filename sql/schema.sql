@@ -1,0 +1,12 @@
+CREATE DATABASE todolist;
+
+USE todolist;
+
+CREATE TABLE tasks (
+    id INT PRIMARY KEY AUTO_INCREMENT NOT NULL,
+    title VARCHAR(255) NOT NULL,
+    description TEXT NULL,
+    priority VARCHAR(10) NOT NULL,
+    completed BOOLEAN NOT NULL DEFAULT FALSE,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
