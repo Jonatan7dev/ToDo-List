@@ -1,4 +1,4 @@
-package main.java.todolist.model;
+package todolist.model;
 
 public class Priority{
     public enum priority{

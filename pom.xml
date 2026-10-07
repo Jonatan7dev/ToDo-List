@@ -7,17 +7,22 @@
 
     <modelVersion>4.0.0</modelVersion>
 
+    <!-- Información del proyecto -->
     <groupId>com.jonatan7dev</groupId>
     <artifactId>todo-list</artifactId>
     <version>1.0-SNAPSHOT</version>
 
+    <!-- Versiones -->
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+
         <maven.compiler.release>21</maven.compiler.release>
+
         <javafx.version>21.0.6</javafx.version>
-        <mariadb.version>3.5.6</mariadb.version>
+        <mysql.version>9.5.0</mysql.version>
     </properties>
 
+    <!-- Dependencias -->
     <dependencies>
 
         <!-- JavaFX -->
@@ -33,15 +38,16 @@
             <version>${javafx.version}</version>
         </dependency>
 
-        <!-- MariaDB JDBC Driver -->
+        <!-- MySQL JDBC Driver -->
         <dependency>
-            <groupId>org.mariadb.jdbc</groupId>
-            <artifactId>mariadb-java-client</artifactId>
-            <version>${mariadb.version}</version>
+            <groupId>com.mysql</groupId>
+            <artifactId>mysql-connector-j</artifactId>
+            <version>${mysql.version}</version>
         </dependency>
 
     </dependencies>
 
+    <!-- Plugins -->
     <build>
         <plugins>
 
@@ -67,4 +73,5 @@
 
         </plugins>
     </build>
+
 </project>
