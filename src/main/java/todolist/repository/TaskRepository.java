@@ -10,62 +10,73 @@ import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.List;
+import todolist.model.Priority;
+
 
 public class TaskRepository {
 
     //Obtener las taras
-    public List<Task> getAllTasks() throws SQLException{
+    public List<Task> getAllTasks() throws SQLException {
 
-        String sql = "SELECT * FROM tasks ORDER BY id";
-        List<Task> tasks = new ArrayList<>();
+    String sql = "SELECT * FROM tasks ORDER BY id";
+    List<Task> tasks = new ArrayList<>();
 
-        try(Connection conn = DatabaseConnection.getConnection();
-            PreparedStatement ps = conn.prepareStatement(sql);
-            ResultSet rs = ps.executeQuery()){
+    try (Connection conn = DatabaseConnection.getConnection();
+         PreparedStatement ps = conn.prepareStatement(sql);
+         ResultSet rs = ps.executeQuery()) {
 
-                while (rs.next()) {
-                    Timestamp createdAt = rs.getTimestamp("created_at");
+        while (rs.next()) {
+            Task task = new Task(
+                rs.getString("title"),
+                rs.getString("description"),
+                Priority.valueOf(rs.getString("priority"))
+            );
 
-                    Task task = new Task(
-                        rs.getInt("id"),
-                        rs.getString("title"),
-                        rs.getString("description"),
-                        rs.getString("priority"),
-                        rs.getBoolean("completed"),
-                        createdAt == null ? null : createdAt.toLocalDateTime()
-                    );
-                    
-                    tasks.add(task);
-                }
+            task.setId(rs.getInt("id"));
+            task.setCompleted(rs.getBoolean("completed"));
+
+            Timestamp createdAt = rs.getTimestamp("created_at");
+            if (createdAt != null) {
+                task.setCreatedAt(createdAt.toLocalDateTime());
             }
-        return tasks;
+
+            tasks.add(task);
+        }
     }
 
+    return tasks;
+}
+
     public Task getTaskById(int id) throws SQLException {
-        String sql = "SELECT * FROM tasks WHERE id = ?";
+    String sql = "SELECT * FROM tasks WHERE id = ?";
 
-        try (Connection conn = DatabaseConnection.getConnection();
-            PreparedStatement ps = conn.prepareStatement(sql)) {
+    try (Connection conn = DatabaseConnection.getConnection();
+         PreparedStatement ps = conn.prepareStatement(sql)) {
 
-            ps.setInt(1, id);
+        ps.setInt(1, id);
 
-            try (ResultSet rs = ps.executeQuery()) {
-                if (rs.next()) {
-                    Timestamp createdAt = rs.getTimestamp("created_at");
+        try (ResultSet rs = ps.executeQuery()) {
+            if (rs.next()) {
+                Task task = new Task(
+                    rs.getString("title"),
+                    rs.getString("description"),
+                    Priority.valueOf(rs.getString("priority"))
+                );
 
-                    return new Task(
-                            rs.getInt("id"),
-                            rs.getString("title"),
-                            rs.getString("description"),
-                            rs.getString("priority"),
-                            rs.getBoolean("completed"),
-                            createdAt == null ? null : createdAt.toLocalDateTime()
-                    );
+                task.setId(rs.getInt("id"));
+                task.setCompleted(rs.getBoolean("completed"));
+
+                Timestamp createdAt = rs.getTimestamp("created_at");
+                if (createdAt != null) {
+                    task.setCreatedAt(createdAt.toLocalDateTime());
                 }
+
+                return task;
             }
         }
+    }
 
-        return null; // No se encontró una tarea con ese ID.
+    return null; // No se encontró una tarea con ese ID.
 }
 
     public boolean createTask(Task task) throws SQLException{
@@ -77,7 +88,7 @@ public class TaskRepository {
 
                 ps.setString(1, task.getTitle());
                 ps.setString(2, task.getDescription());
-                ps.setString(3, task.getPriority());
+                ps.setString(3, task.getPriority().name());
 
                 int rowsInserted = ps.executeUpdate();
                 return rowsInserted > 0;
@@ -90,7 +101,7 @@ public class TaskRepository {
         
         String newTitle = task.getTitle();
         String newDescription = task.getDescription();
-        String newPriority = task.getPriority();
+        String newPriority = task.getPriority().name();
         boolean newCompleted = task.isCompleted();
         
 

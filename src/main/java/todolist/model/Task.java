@@ -1,13 +1,14 @@
 package todolist.model;
 
 import java.time.LocalDateTime;
+import todolist.model.Priority;
 
 public class Task{
 
     private int id;
     private String title;
     private String description;
-    private String priority;
+    private Priority priority;
     private boolean completed;
     private LocalDateTime createdAt;
 
@@ -15,13 +16,13 @@ public class Task{
     }
 
     // Constructor con todos los parámetros
-    public Task(int id, String title, String description, String priority, boolean completed, LocalDateTime createdAt) {
-        this.id = id;
+    public Task(String title, String description, Priority priority) {
+        
         this.title = title;
         this.description = description;
         this.priority = priority;
-        this.completed = completed;
-        this.createdAt = createdAt;
+        this.completed = false;
+        this.createdAt = LocalDateTime.now();
     }
 
     // Getters y Setters
@@ -49,11 +50,11 @@ public class Task{
         this.description = description;
     }
 
-    public String getPriority() {
+    public Priority getPriority() {
         return priority;
     }
 
-    public void setPriority(String priority) {
+    public void setPriority(Priority priority) {
         this.priority = priority;
     }
 

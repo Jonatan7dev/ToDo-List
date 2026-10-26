@@ -1,6 +1,7 @@
 package todolist;
 
 import todolist.model.Task;
+import todolist.model.Priority;
 import todolist.repository.TaskRepository;
 
 import java.sql.SQLException;
@@ -11,18 +12,15 @@ public class RepositoryCheck {
     public static void main(String[] args) throws SQLException {
         TaskRepository repository = new TaskRepository();
         String testTitle = "Tarea de prueba3";
+        Priority pr = Priority.LOW;
+      
 
         // Crear una tarea
-        Task newTask = new Task(
-                0,
-                testTitle,
-                "Descripción de prueba6",
-                "Low",
-                false,
-                null
-        );
+        Task newTask = new Task("Hola", "Dos", Priority.HIGH);
 
-        repository.updateTask(newTask, 1);
+        repository.createTask(newTask);
+
+        
 
        
        for (Task task : repository.getAllTasks()) {
