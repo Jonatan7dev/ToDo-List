@@ -1,5 +1,5 @@
 
-package todolist;
+package todolist.testing;
 
 import todolist.model.Task;
 import todolist.model.Priority;

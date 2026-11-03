@@ -5,6 +5,8 @@ import todolist.repository.TaskRepository;
 import todolist.model.Priority;
 import todolist.model.Task;
 import java.sql.SQLException;
+import java.util.List;
+
 
 public class TaskService {
 
@@ -23,6 +25,15 @@ public class TaskService {
         }
     }
 
+    public List<Task> getAllTasks(){
+        try{
+            return tr.getAllTasks();
+        } catch(SQLException e){
+            throw new RuntimeException("No se han podido cargar las tareas de la base de datos.", e
+            );
+        }
+    }
+    
     public void createTask(String title, String description, Priority priority) {
 
         // Validar título

@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import java.lang.String?>
+<?import javafx.collections.FXCollections?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<VBox xmlns:fx="http://javafx.com/fxml/1" prefWidth="460" spacing="12" stylesheets="@estilo.css" styleClass="page">
+    <Label text="ORGANIZADOR PERSONAL" styleClass="kicker"/>
+    <Label fx:id="headingLabel" text="Nueva tarea" styleClass="heading"/>
+    <VBox spacing="5"><Label text="Título *"/><TextField fx:id="titleField" promptText="Ej. Preparar la presentación"/></VBox>
+    <VBox spacing="5"><Label text="Descripción (opcional)"/><TextArea fx:id="descriptionArea" promptText="Añade los detalles de la tarea" wrapText="true" prefRowCount="3"/></VBox>
+    <VBox spacing="5"><Label text="Prioridad *"/><ComboBox fx:id="priorityBox" promptText="Selecciona una prioridad" maxWidth="Infinity">
+        <items><FXCollections fx:factory="observableArrayList"><String fx:value="Alta"/><String fx:value="Media"/><String fx:value="Baja"/></FXCollections></items>
+    </ComboBox></VBox>
+    <CheckBox fx:id="completedCheck" text="Completada" visible="false" managed="false"/>
+    <HBox alignment="CENTER_RIGHT" spacing="10">
+        <Button fx:id="cancelButton" text="Cancelar" styleClass="secondary" cancelButton="true"/>
+        <Button fx:id="saveButton" text="Guardar" styleClass="primary" defaultButton="true"/>
+    </HBox>
+</VBox>

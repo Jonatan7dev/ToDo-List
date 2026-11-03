@@ -1,0 +1,10 @@
+.page { -fx-padding: 30; -fx-background-color: #f4f7f6; -fx-font-family: "System"; -fx-font-size: 14px; }
+.label { -fx-text-fill: #233d37; }
+.kicker { -fx-font-size: 11px; -fx-text-fill: #397369; -fx-font-weight: bold; }
+.heading { -fx-font-size: 34px; -fx-font-weight: bold; }
+.primary, .secondary { -fx-padding: 8 15; -fx-background-radius: 5; -fx-cursor: hand; }
+.primary { -fx-background-color: #236454; -fx-text-fill: white; }
+.secondary { -fx-background-color: white; -fx-text-fill: #344d46; -fx-border-color: #bbcfc7; -fx-border-radius: 5; }
+.table-view { -fx-background-color: white; -fx-border-color: #d1ded8; -fx-table-cell-border-color: transparent; }
+.table-view .column-header, .table-view .filler { -fx-background-color: #e3eee8; -fx-size: 38px; }
+.table-view .column-header .label { -fx-alignment: CENTER_LEFT; -fx-padding: 0 8; }

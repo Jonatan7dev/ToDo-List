@@ -1,7 +1,7 @@
 package todolist.model;
 
 import java.time.LocalDateTime;
-import todolist.model.Priority;
+
 
 public class Task{
 
