@@ -12,9 +12,9 @@
     <Label styleClass="kicker" text="ORGANIZADOR PERSONAL" />
     <Label styleClass="heading" text="Mis tareas" />
     <HBox alignment="CENTER_LEFT" spacing="12">
-        <Button fx:id="newButton" styleClass="primary" text="+ Nuevo" />
+        <Button fx:id="newButton" styleClass="primary" text="+ Nuevo" onAction="#openNewTaskForm"/>
         <Region HBox.hgrow="ALWAYS" />
-        <Button fx:id="clearCompletedButton" styleClass="secondary" text="Borrar todos los completados" />
+        <Button fx:id="clearCompletedButton" styleClass="secondary" text="Borrar todos los completados" onAction="#deleteAllCompleted"/>
     </HBox>
     <TableView fx:id="taskTable" fixedCellSize="54" VBox.vgrow="ALWAYS">
         <columns>

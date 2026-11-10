@@ -227,5 +227,34 @@ public class TaskService {
         }
     }
 
+    public void setTaskCompleted(int id, boolean completed) {
+        validateId(id);
+
+        try {
+            Task task = tr.getTaskById(id);
+
+            if (task == null) {
+                throw new IllegalArgumentException(
+                    "No existe una tarea con ese ID"
+                );
+            }
+
+            task.setCompleted(completed);
+
+            boolean updated = tr.updateTask(task, id);
+
+            if (!updated) {
+                throw new IllegalStateException(
+                    "No se ha podido cambiar el estado de la tarea."
+                );
+            }
+
+        } catch (SQLException e) {
+            throw new RuntimeException(
+                "Error al cambiar el estado de la tarea en la base de datos.", e
+            );
+        }
+    }
+
 }
 
