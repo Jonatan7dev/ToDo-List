@@ -12,10 +12,7 @@ public class Task{
     private boolean completed;
     private LocalDateTime createdAt;
 
-    public Task() {
-    }
-
-    // Constructor con todos los parámetros
+    // Una nueva tarea comienza pendiente y sin ID de base de datos.
     public Task(String title, String description, Priority priority) {
         
         this.title = title;

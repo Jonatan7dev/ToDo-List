@@ -1,260 +1,76 @@
-
 package todolist.service;
 
-import todolist.repository.TaskRepository;
-import todolist.model.Priority;
-import todolist.model.Task;
 import java.sql.SQLException;
 import java.util.List;
-
+import todolist.model.Priority;
+import todolist.model.Task;
+import todolist.repository.TaskRepository;
 
 public class TaskService {
+    private final TaskRepository repository;
 
-    private final TaskRepository tr;
-
-    public TaskService(TaskRepository tr) {
-        this.tr = tr;
+    public TaskService(TaskRepository repository) {
+        this.repository = repository;
     }
 
-    // Validar ID
+    public List<Task> getAllTasks() throws SQLException {
+        return repository.getAllTasks();
+    }
+
     private void validateId(int id) {
-        if (id <= 0) {
-            throw new IllegalArgumentException(
-                "El ID no es válido"
-            );
-        }
+        if (id <= 0) throw new IllegalArgumentException("El ID no es válido.");
     }
 
-    public List<Task> getAllTasks(){
-        try{
-            return tr.getAllTasks();
-        } catch(SQLException e){
-            throw new RuntimeException("No se han podido cargar las tareas de la base de datos.", e
-            );
-        }
-    }
-    
-    public void createTask(String title, String description, Priority priority) {
-
-        // Validar título
-        if (title == null || title.isBlank()) {
-            throw new IllegalArgumentException("El título es obligatorio");
-        }
-
-        title = title.trim();
-
-        if (title.length() > 255) {
-            throw new IllegalArgumentException(
-                "El título no puede contener más de 255 caracteres"
-            );
-        }
-
-        // Validar prioridad
-        if (priority == null) {
-            throw new IllegalArgumentException("La prioridad es obligatoria");
-        }
-
-        Task task = new Task(title, description, priority);
-
-        try {
-            boolean created = tr.createTask(task);
-
-            if (!created) {
-                throw new IllegalStateException(
-                    "No se ha podido crear la tarea."
-                );
-            }
-        } catch (SQLException e) {
-            throw new RuntimeException(
-                "Error al guardar la tarea en la base de datos.", e
-            );
-        }
+    private String validateTitle(String title, Priority priority) {
+        if (title == null || title.isBlank())
+            throw new IllegalArgumentException("El título es obligatorio.");
+        title = title.strip();
+        if (title.length() > 255)
+            throw new IllegalArgumentException("El título no puede superar 255 caracteres.");
+        if (priority == null)
+            throw new IllegalArgumentException("La prioridad es obligatoria.");
+        return title;
     }
 
-    public void updateTask(int id, String title, String description, Priority priority) {
-
+    private Task requireTask(int id) throws SQLException {
         validateId(id);
-
-        if (title == null || title.isBlank()) {
-            throw new IllegalArgumentException("El título es obligatorio");
-        }
-
-        title = title.trim();
-
-        if (title.length() > 255) {
-            throw new IllegalArgumentException(
-                "El título no puede contener más de 255 caracteres"
-            );
-        }
-
-        if (priority == null) {
-            throw new IllegalArgumentException("La prioridad es obligatoria");
-        }
-
-        try {
-            Task task = tr.getTaskById(id);
-
-            if (task == null) {
-                throw new IllegalArgumentException(
-                    "No existe una tarea con ese ID"
-                );
-            }
-
-            task.setTitle(title);
-            task.setDescription(description);
-            task.setPriority(priority);
-
-            boolean updated = tr.updateTask(task, id);
-
-            if (!updated) {
-                throw new IllegalStateException(
-                    "No se ha podido actualizar la tarea."
-                );
-            }
-
-        } catch (SQLException e) {
-            throw new RuntimeException(
-                "Error al actualizar la tarea en la base de datos.", e
-            );
-        }
+        Task task = repository.getTaskById(id);
+        if (task == null) throw new IllegalArgumentException("La tarea ya no existe. Actualiza la lista.");
+        return task;
     }
 
-    public void deleteTask(int id) {
+    public void createTask(String title, String description, Priority priority) throws SQLException {
+        Task task = new Task(validateTitle(title, priority), description, priority);
+        if (!repository.createTask(task)) throw new SQLException("No se insertó la tarea.");
+    }
 
+    public void updateTask(int id, String title, String description, Priority priority,
+                           boolean completed) throws SQLException {
         validateId(id);
-
-        try {
-            Task task = tr.getTaskById(id);
-
-            if (task == null) {
-                throw new IllegalArgumentException(
-                    "No existe una tarea con ese ID"
-                );
-            }
-
-            boolean deleted = tr.removeTask(id);
-
-            if (!deleted) {
-                throw new IllegalStateException(
-                    "No se ha podido eliminar la tarea."
-                );
-            }
-
-        } catch (SQLException e) {
-            throw new RuntimeException(
-                "Error al eliminar la tarea de la base de datos.", e
-            );
-        }
+        Task task = new Task(validateTitle(title, priority), description, priority);
+        task.setCompleted(completed);
+        if (!repository.updateTask(task, id))
+            throw new IllegalArgumentException("La tarea ya no existe. Actualiza la lista.");
     }
 
-    public void duplicateTask(int id) {
-
+    public void setTaskCompleted(int id, boolean completed) throws SQLException {
         validateId(id);
-
-        try {
-            Task original = tr.getTaskById(id);
-
-            if (original == null) {
-                throw new IllegalArgumentException(
-                    "No existe una tarea con ese ID"
-                );
-            }
-
-            Task duplicate = new Task(
-                original.getTitle(),
-                original.getDescription(),
-                original.getPriority()
-            );
-
-            boolean created = tr.createTask(duplicate);
-
-            if (!created) {
-                throw new IllegalStateException(
-                    "No se ha podido duplicar la tarea."
-                );
-            }
-
-        } catch (SQLException e) {
-            throw new RuntimeException(
-                "Error al duplicar la tarea en la base de datos.", e
-            );
-        }
+        if (!repository.setCompleted(id, completed))
+            throw new IllegalArgumentException("La tarea ya no existe. Actualiza la lista.");
     }
 
-    public void completeTask(int id) {
-
+    public void deleteTask(int id) throws SQLException {
         validateId(id);
-
-        try {
-            Task task = tr.getTaskById(id);
-
-            if (task == null) {
-                throw new IllegalArgumentException(
-                    "No existe una tarea con ese ID"
-                );
-            }
-
-            if (task.isCompleted()) {
-                throw new IllegalStateException(
-                    "La tarea ya está completada."
-                );
-            }
-
-            task.setCompleted(true);
-
-            boolean updated = tr.updateTask(task, id);
-
-            if (!updated) {
-                throw new IllegalStateException(
-                    "No se ha podido completar la tarea."
-                );
-            }
-
-        } catch (SQLException e) {
-            throw new RuntimeException(
-                "Error al completar la tarea en la base de datos.", e
-            );
-        }
+        if (!repository.removeTask(id))
+            throw new IllegalArgumentException("La tarea ya no existe. Actualiza la lista.");
     }
 
-    public int deleteCompletedTasks() {
-        try {
-            return tr.removeCompletedTasks();
-        } catch (SQLException e) {
-            throw new RuntimeException(
-                "Error al eliminar las tareas completadas de la base de datos.", e
-            );
-        }
+    public void duplicateTask(int id) throws SQLException {
+        Task original = requireTask(id);
+        createTask(original.getTitle(), original.getDescription(), original.getPriority());
     }
 
-    public void setTaskCompleted(int id, boolean completed) {
-        validateId(id);
-
-        try {
-            Task task = tr.getTaskById(id);
-
-            if (task == null) {
-                throw new IllegalArgumentException(
-                    "No existe una tarea con ese ID"
-                );
-            }
-
-            task.setCompleted(completed);
-
-            boolean updated = tr.updateTask(task, id);
-
-            if (!updated) {
-                throw new IllegalStateException(
-                    "No se ha podido cambiar el estado de la tarea."
-                );
-            }
-
-        } catch (SQLException e) {
-            throw new RuntimeException(
-                "Error al cambiar el estado de la tarea en la base de datos.", e
-            );
-        }
+    public int deleteCompletedTasks() throws SQLException {
+        return repository.removeCompletedTasks();
     }
-
 }
-

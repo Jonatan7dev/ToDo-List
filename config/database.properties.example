@@ -1,0 +1,5 @@
+# Copiar a %USERPROFILE%\.todolist\database.properties (UTF-8)
+# Mismos servidor y base de datos que utilizabas en el IDE.
+url=jdbc:mysql://127.0.0.1:3306/todolist
+user=root
+password=

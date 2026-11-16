@@ -1,7 +1,6 @@
 package todolist.ui;
 
 import java.io.IOException;
-
 import javafx.beans.property.ReadOnlyBooleanWrapper;
 import javafx.beans.property.ReadOnlyStringWrapper;
 import javafx.fxml.FXML;
@@ -9,260 +8,144 @@ import javafx.fxml.FXMLLoader;
 import javafx.geometry.Pos;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
-import javafx.scene.control.Alert;
-import javafx.scene.control.Button;
-import javafx.scene.control.ButtonType;
-import javafx.scene.control.CheckBox;
-import javafx.scene.control.TableCell;
-import javafx.scene.control.TableColumn;
-import javafx.scene.control.TableView;
+import javafx.scene.control.*;
 import javafx.scene.layout.HBox;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
-import todolist.model.Priority;
 import todolist.model.Task;
 import todolist.service.TaskService;
 
 public class MainController {
+    @FXML private TableView<Task> taskTable;
+    @FXML private TableColumn<Task, String> titleColumn, priorityColumn;
+    @FXML private TableColumn<Task, Boolean> completedColumn;
+    @FXML private TableColumn<Task, Void> actionsColumn;
+    @FXML private Button newButton, clearCompletedButton, refreshButton;
+    @FXML private Label statusLabel;
+    private final DatabaseTasks jobs = new DatabaseTasks();
+    private TaskService service;
+    private boolean loaded;
 
-    @FXML
-    private TableView<Task> taskTable;
-
-    @FXML
-    private TableColumn<Task, String> titleColumn;
-
-    @FXML
-    private TableColumn<Task, String> priorityColumn;
-
-    @FXML
-    private TableColumn<Task, Boolean> completedColumn;
-
-    @FXML
-    private TableColumn<Task, Void> actionsColumn;
-
-    private TaskService taskService;
-
-    @FXML
-    private void initialize() {
-        titleColumn.setCellValueFactory(cell ->
-            new ReadOnlyStringWrapper(cell.getValue().getTitle())
-        );
-
-        priorityColumn.setCellValueFactory(cell ->
-            new ReadOnlyStringWrapper(
-                priorityLabel(cell.getValue().getPriority())
-            )
-        );
-
-        configureCompletedColumn();
-        configureActionsColumn();
-    }
-
-    public void setTaskService(TaskService taskService) {
-        this.taskService = taskService;
-        loadTasks();
-    }
-
-    private String priorityLabel(Priority priority) {
-        return switch (priority) {
-            case HIGH -> "Alta";
-            case MEDIUM -> "Media";
-            case LOW -> "Baja";
-        };
-    }
-
-    private void loadTasks() {
-        try {
-            taskTable.getItems().setAll(taskService.getAllTasks());
-        } catch (RuntimeException e) {
-            showError("No se pudo cargar la lista de tareas", e);
-        }
-    }
-
-    private void configureCompletedColumn() {
-        completedColumn.setCellValueFactory(cell ->
-            new ReadOnlyBooleanWrapper(cell.getValue().isCompleted())
-        );
-
-        completedColumn.setCellFactory(column ->
-            new TableCell<Task, Boolean>() {
-
-                private final CheckBox checkBox = new CheckBox();
-
-                {
-                    setAlignment(Pos.CENTER);
-
-                    checkBox.setOnAction(event -> {
-                        Task task = getTableRow().getItem();
-
-                        if (task == null) {
-                            return;
-                        }
-
-                        boolean previousState = task.isCompleted();
-                        boolean completed = checkBox.isSelected();
-
-                        try {
-                            taskService.setTaskCompleted(
-                                task.getId(), completed
-                            );
-
-                            // Actualiza también el objeto de la tabla.
-                            task.setCompleted(completed);
-                            taskTable.refresh();
-
-                        } catch (RuntimeException e) {
-                            checkBox.setSelected(previousState);
-                            showError(
-                                "No se pudo cambiar el estado de la tarea",
-                                e
-                            );
-                        }
-                    });
-                }
-
-                @Override
-                protected void updateItem(Boolean item, boolean empty) {
-                    super.updateItem(item, empty);
-
-                    if (empty || item == null) {
-                        setGraphic(null);
-                    } else {
-                        checkBox.setSelected(item);
-                        setGraphic(checkBox);
-                    }
-                }
+    @FXML private void initialize() {
+        titleColumn.setCellValueFactory(c -> new ReadOnlyStringWrapper(c.getValue().getTitle()));
+        priorityColumn.setCellValueFactory(c -> new ReadOnlyStringWrapper(c.getValue().getPriority().toString()));
+        taskTable.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY_FLEX_LAST_COLUMN);
+        completedColumn.setCellValueFactory(c -> new ReadOnlyBooleanWrapper(c.getValue().isCompleted()));
+        completedColumn.setCellFactory(column -> new TableCell<>() {
+            private final CheckBox box = new CheckBox();
+            {
+                setAlignment(Pos.CENTER);
+                box.setOnAction(event -> {
+                    Task task = getTableRow().getItem();
+                    if (task == null) return;
+                    boolean selected = box.isSelected();
+                    // El modelo solo cambia después de confirmar la escritura.
+                    box.setSelected(task.isCompleted());
+                    mutate(() -> service.setTaskCompleted(task.getId(), selected));
+                });
             }
-        );
-    }
-
-    private void configureActionsColumn() {
-        actionsColumn.setCellFactory(column ->
-            new TableCell<Task, Void>() {
-
-                private final Button editButton =
-                    new Button("Actualizar");
-
-                private final Button deleteButton =
-                    new Button("Borrar");
-
-                private final HBox buttons =
-                    new HBox(8, editButton, deleteButton);
-
-                {
-                    buttons.setAlignment(Pos.CENTER);
-
-                    editButton.setOnAction(event -> {
-                        Task task = getTableRow().getItem();
-
-                        if (task != null) {
-                            openTaskForm(task);
-                        }
-                    });
-
-                    deleteButton.setOnAction(event -> {
-                        Task task = getTableRow().getItem();
-
-                        if (task != null) {
-                            deleteTask(task);
-                        }
-                    });
-                }
-
-                @Override
-                protected void updateItem(Void item, boolean empty) {
-                    super.updateItem(item, empty);
-                    setGraphic(empty ? null : buttons);
-                }
+            @Override protected void updateItem(Boolean item, boolean empty) {
+                super.updateItem(item, empty);
+                if (!empty && item != null) box.setSelected(item);
+                setGraphic(empty || item == null ? null : box);
             }
-        );
+        });
+        actionsColumn.setCellFactory(column -> new TableCell<>() {
+            private final Button edit = new Button("Actualizar");
+            private final Button duplicate = new Button("Duplicar");
+            private final Button delete = new Button("Borrar");
+            private final HBox buttons = new HBox(6, edit, duplicate, delete);
+            {
+                buttons.setAlignment(Pos.CENTER);
+                edit.setOnAction(e -> { Task t = getTableRow().getItem(); if (t != null) openTaskForm(t); });
+                duplicate.setOnAction(e -> { Task t = getTableRow().getItem();
+                    if (t != null) mutate(() -> service.duplicateTask(t.getId())); });
+                delete.setOnAction(e -> { Task t = getTableRow().getItem();
+                    if (t != null && confirm("¿Borrar esta tarea?", t.getTitle()))
+                        mutate(() -> service.deleteTask(t.getId())); });
+            }
+            @Override protected void updateItem(Void item, boolean empty) {
+                super.updateItem(item, empty);
+                setGraphic(empty ? null : buttons);
+            }
+        });
+        jobs.busyProperty().addListener((obs, old, busy) -> updateControls());
+        updateControls();
     }
 
-    @FXML
-    private void openNewTaskForm() {
-        openTaskForm(null);
+    public void setTaskService(TaskService service) { this.service = service; loadTasks(); }
+    public boolean isBusy() { return jobs.isBusy(); }
+
+    private void updateControls() {
+        boolean disabled = jobs.isBusy() || !loaded;
+        taskTable.setDisable(disabled);
+        newButton.setDisable(disabled);
+        clearCompletedButton.setDisable(disabled);
+        refreshButton.setDisable(jobs.isBusy());
     }
+
+    @FXML private void loadTasks() {
+        statusLabel.setText("Cargando tareas...");
+        jobs.run(service::getAllTasks, tasks -> {
+            taskTable.getItems().setAll(tasks);
+            taskTable.sort();
+            taskTable.setPlaceholder(new Label("No hay tareas. Pulsa + Nuevo para crear una."));
+            loaded = true;
+            statusLabel.setText(tasks.size() + " tareas");
+            updateControls();
+        }, error -> failed("No se pudieron cargar las tareas", error));
+    }
+
+    private void failed(String header, Throwable error) {
+        loaded = false;
+        statusLabel.setText("Error. La lista puede estar desactualizada. Pulsa Actualizar lista.");
+        taskTable.setPlaceholder(new Label("No se pudieron cargar los datos."));
+        updateControls();
+        Errors.show(taskTable.getScene().getWindow(), header, error);
+    }
+
+    @FunctionalInterface private interface Change { void run() throws Exception; }
+    private void mutate(Change change) {
+        statusLabel.setText("Guardando cambios...");
+        jobs.run(() -> { change.run(); return null; }, ignored -> loadTasks(),
+                error -> failed("No se pudo confirmar el cambio", error));
+    }
+
+    @FXML private void openNewTaskForm() { openTaskForm(null); }
 
     private void openTaskForm(Task task) {
         try {
-            FXMLLoader loader = new FXMLLoader(
-                getClass().getResource("/todolist/ui/Formulario.fxml")
-            );
-
-            Parent form = loader.load();
-
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/todolist/ui/Formulario.fxml"));
+            Parent root = loader.load();
             TaskFormController controller = loader.getController();
-            controller.setTaskService(taskService);
-
-            if (task != null) {
-                controller.setTaskToEdit(task);
-            }
-
+            controller.configure(service, jobs, task);
             Stage dialog = new Stage();
-            dialog.setTitle(
-                task == null ? "Nueva tarea" : "Actualizar tarea"
-            );
+            dialog.setTitle(task == null ? "Nueva tarea" : "Actualizar tarea");
             dialog.initOwner(taskTable.getScene().getWindow());
             dialog.initModality(Modality.WINDOW_MODAL);
-            dialog.setScene(new Scene(form));
+            dialog.setScene(new Scene(root));
+            dialog.setOnCloseRequest(event -> { if (jobs.isBusy()) event.consume(); });
             dialog.showAndWait();
-
-            loadTasks();
-
+            // También refrescamos tras errores de escritura: su resultado puede ser incierto.
+            if (controller.wasAttempted()) loadTasks();
         } catch (IOException e) {
-            showError("No se pudo abrir el formulario", e);
+            Errors.show(taskTable.getScene().getWindow(), "No se pudo abrir el formulario", e);
         }
     }
 
-    private void deleteTask(Task task) {
-        Alert confirmation = new Alert(Alert.AlertType.CONFIRMATION);
-        confirmation.setTitle("Borrar tarea");
-        confirmation.setHeaderText("¿Quieres borrar esta tarea?");
-        confirmation.setContentText(task.getTitle());
-
-        if (confirmation.showAndWait().orElse(ButtonType.CANCEL)
-                != ButtonType.OK) {
+    @FXML private void deleteAllCompleted() {
+        if (taskTable.getItems().stream().noneMatch(Task::isCompleted)) {
+            statusLabel.setText("No hay tareas completadas en la lista. Actualízala si es necesario.");
             return;
         }
-
-        try {
-            taskService.deleteTask(task.getId());
-            loadTasks();
-
-        } catch (RuntimeException e) {
-            showError("No se pudo borrar la tarea", e);
-        }
+        if (confirm("¿Borrar todas las tareas completadas?", "Esta acción no se puede deshacer."))
+            mutate(() -> service.deleteCompletedTasks());
     }
 
-    @FXML
-    private void deleteAllCompleted() {
-        Alert confirmation = new Alert(Alert.AlertType.CONFIRMATION);
-        confirmation.setTitle("Borrar tareas completadas");
-        confirmation.setHeaderText(
-            "¿Quieres borrar todas las tareas completadas?"
-        );
-        confirmation.setContentText("Esta acción no se puede deshacer.");
-
-        if (confirmation.showAndWait().orElse(ButtonType.CANCEL)
-                != ButtonType.OK) {
-            return;
-        }
-
-        try {
-            taskService.deleteCompletedTasks();
-            loadTasks();
-
-        } catch (RuntimeException e) {
-            showError("No se pudieron borrar las tareas completadas", e);
-        }
-    }
-
-    private void showError(String header, Exception e) {
-        e.printStackTrace();
-
-        Alert alert = new Alert(Alert.AlertType.ERROR);
+    private boolean confirm(String header, String detail) {
+        Alert alert = new Alert(Alert.AlertType.CONFIRMATION, detail, ButtonType.OK, ButtonType.CANCEL);
+        alert.initOwner(taskTable.getScene().getWindow());
         alert.setHeaderText(header);
-        alert.setContentText(e.getMessage());
-        alert.showAndWait();
+        return alert.showAndWait().orElse(ButtonType.CANCEL) == ButtonType.OK;
     }
 }

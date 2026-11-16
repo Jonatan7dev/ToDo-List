@@ -10,7 +10,7 @@
     <!-- Información del proyecto -->
     <groupId>com.jonatan7dev</groupId>
     <artifactId>todo-list</artifactId>
-    <version>1.0-SNAPSHOT</version>
+    <version>1.0.0</version>
 
     <!-- Versiones -->
     <properties>
@@ -45,20 +45,50 @@
             <version>${mysql.version}</version>
         </dependency>
 
+        <dependency>
+            <groupId>org.junit.jupiter</groupId><artifactId>junit-jupiter</artifactId>
+            <version>5.11.4</version><scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.h2database</groupId><artifactId>h2</artifactId>
+            <version>2.3.232</version><scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.testfx</groupId><artifactId>openjfx-monocle</artifactId>
+            <version>21.0.2</version><scope>test</scope>
+        </dependency>
     </dependencies>
 
     <!-- Plugins -->
     <build>
         <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId><artifactId>maven-surefire-plugin</artifactId>
+                <version>3.5.2</version>
+                <configuration><systemPropertyVariables>
+                    <glass.platform>Monocle</glass.platform><monocle.platform>Headless</monocle.platform>
+                    <prism.order>sw</prism.order>
+                </systemPropertyVariables></configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId><artifactId>maven-jar-plugin</artifactId>
+                <version>3.4.2</version>
+                <configuration><archive><manifest><mainClass>todolist.Launcher</mainClass></manifest></archive></configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId><artifactId>maven-dependency-plugin</artifactId>
+                <version>3.8.1</version>
+                <executions><execution><id>runtime-libs</id><phase>package</phase><goals><goal>copy-dependencies</goal></goals>
+                    <configuration><includeScope>runtime</includeScope><outputDirectory>${project.build.directory}/lib</outputDirectory></configuration>
+                </execution></executions>
+            </plugin>
 
             <!-- Compilador de Java -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
                 <version>3.14.0</version>
-                <configuration>
-                    <release>21</release>
-                </configuration>
+
             </plugin>
 
             <!-- Ejecutar JavaFX -->
